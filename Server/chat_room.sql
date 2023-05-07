@@ -24,8 +24,8 @@ CREATE TABLE `friends` (
 CREATE TABLE `groups` (
   `gid` int(11) NOT NULL,
   `name` varchar(20) NOT NULL,
-  `owner` int(11) NOT NULL COMMENT '群主uid',
-  `num` int(11) NOT NULL COMMENT '群成员数量'
+  `owner` int(11) NOT NULL,
+  `num` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `group_member` (

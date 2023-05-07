@@ -121,7 +121,7 @@ int Group_Srv_GetList(int client_fd ,char *JSON){
     List_Init(GroupList ,group_t);
     Group_Perst_GetMyGroup(GroupList ,uid);
     group_t *curPos;
-    List_ForEach(GroupList ,curPos){
+    List_ForEach(GroupList ,curPos){ //将用户拥有的群组发给客户端
         root = cJSON_CreateObject();
         item = cJSON_CreateString("l");
         cJSON_AddItemToObject(root ,"type" ,item);

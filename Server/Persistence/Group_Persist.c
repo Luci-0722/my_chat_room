@@ -18,7 +18,8 @@ int Group_Perst_IsGroup(const char *name){
     MYSQL_RES * res;
     MYSQL_ROW row;
     int rtn = 0;
-    sprintf(SQL,"SELECT gid FROM groups WHERE name = '%s'",name);
+    sprintf(SQL,"SELECT gid FROM `groups` WHERE name = '%s'",name);
+    printf("%s", SQL);
     if(mysql_real_query(mysql , SQL , strlen(SQL))){
         printf("%s\n",mysql_error(mysql));
         return 0;
@@ -32,7 +33,7 @@ int Group_Perst_IsGroup(const char *name){
 int Group_Perst_Create(int uid ,const char *name){
     int gid;
     char SQL[100];
-    sprintf(SQL ,"INSERT INTO groups VALUES(NULL ,'%s', '%d' , 1)", name ,uid);
+    sprintf(SQL ,"INSERT INTO `groups` VALUES(NULL ,'%s', '%d' , 1)", name ,uid);
     if(mysql_real_query(mysql ,SQL ,strlen(SQL))){
         printf("%s\n" ,mysql_error(mysql));
         return 0;
@@ -155,7 +156,7 @@ group_t * Group_Perst_GetInfo(int gid){
     char SQL[100];
     group_t *NewNode = (group_t *)malloc(sizeof(group_t));
     NewNode -> gid = gid;
-    sprintf(SQL,"SELECT * FROM groups WHERE gid = '%d'",NewNode -> gid);
+    sprintf(SQL,"SELECT * FROM `groups` WHERE gid = '%d'",NewNode -> gid);
     if(mysql_real_query(mysql ,SQL ,strlen(SQL))){
         printf("%s",mysql_error(mysql));
         return 0;

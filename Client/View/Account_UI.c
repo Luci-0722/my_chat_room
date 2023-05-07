@@ -16,14 +16,14 @@ int Account_UI_SignIn(){
     scanf("%30s",name);
     ffflush();
     while(1){
-        printf("请输入性别(男/女):");
+        printf("请输入性别(m/f):");
         scanf("%30s",password);//懒得再开数组,暂借一下
         ffflush();
-        if(strcmp(password ,"男") == 0){
+        if(strcmp(password ,"m") == 0){
             sex = 1;
             break;
         }
-        else if(strcmp(password ,"女") == 0){
+        else if(strcmp(password ,"f") == 0){
             sex = 0;
             break;
         }
