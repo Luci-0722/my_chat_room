@@ -119,59 +119,90 @@ void *threadpool<T>::worker(void *arg)
 template <typename T>
 void threadpool<T>::run()
 {
-    while (true)
-    {
-        m_queuestat.wait();
-        m_queuelocker.lock();
-        if (m_workqueue.empty())
-        {
-            m_queuelocker.unlock();
-            continue;
-        }
-        //
-        T *request = m_workqueue.front(); //取出队头
-        m_workqueue.pop_front();
-        m_queuelocker.unlock();
-        if (!request)
-            continue;
-        //Reactor
-        if (1 == m_actor_model)
-        {
-            //IO事件类型：0为读
-            if (0 == request->m_state)
-            {
-                if (request->read_once())
-                {
-                    request->improv = 1;
-                    connectionRAII mysqlcon(&request->mysql, m_connPool);
-                    request->process();
+    char buf[MSG_LEN];
+    int ret ,recv_len;
+    cJSON *root ,*item;
+    char choice[3];
+    int client_fd = (int)(long)arg;
+    while(1){
+        recv_len = 0;
+        while(recv_len < MSG_LEN){
+            ret = 0;
+            if((ret = recv(client_fd , buf + recv_len , MSG_LEN - recv_len , 0)) <= 0){
+                int uid = Account_Srv_ChIsOnline(-1 , 0 ,client_fd);
+                if(uid != -1){
+                    Account_Srv_SendIsOnline(uid ,0);
+                    //向在线好友发送下线通知
                 }
-                else
-                {
-                    request->improv = 1;
-                    request->timer_flag = 1;
-                }
+                perror("recv");
+                return NULL;
             }
-            else
-            {
-                if (request->write())
-                {
-                    request->improv = 1;
-                }
-                else
-                {
-                    request->improv = 1;
-                    request->timer_flag = 1;
-                }
-            }
+            recv_len += ret;
         }
-        //default:Proactor，线程池不需要进行数据读取，而是直接开始业务处理
-        //之前的操作已经将数据读取到http的read和write的buffer中了
-        else
-        {
-            connectionRAII mysqlcon(&request->mysql, m_connPool);
-            request->process();
+        root = cJSON_Parse(buf);
+        item = cJSON_GetObjectItem(root,"type");
+        strcpy(choice ,item -> valuestring);
+        cJSON_Delete(root);
+//        printf("收到: sockfd = %d\n%s\n",client_fd,buf);
+
+        switch(choice[0]){
+            case 'L' :
+                //登录
+                Account_Srv_Login(client_fd , buf);
+                break;
+            case 'S' :
+                //注册
+                Account_Srv_SignIn(client_fd , buf);
+                break;
+            case 'A' :
+                //添加好友
+                Friends_Srv_Add(client_fd, buf);
+                break;
+            case 'G' :
+                //获取好友列表
+                Friends_Srv_GetList(client_fd ,buf);
+                break;
+            case 'g' :
+                //获取群列表
+                Group_Srv_GetList(client_fd ,buf);
+                break;
+            case 'P' :
+                //私聊
+                Chat_Srv_Private(client_fd,buf);
+                break;
+            case 'p':
+                //群聊
+                Chat_Srv_Group(client_fd ,buf);
+                break;
+            case 'F' :
+                //文件
+                Chat_Srv_File(buf);
+                break;
+            case 'O' :
+                Account_Srv_Out(client_fd ,buf);
+                break;
+            case 'a':
+                Friends_Srv_Apply(client_fd ,buf);
+                break;
+            case 'c':
+                Group_Srv_Create(client_fd ,buf);
+                break;
+            case 'M' :
+                Group_Srv_AddMember(client_fd ,buf);
+                break;
+            case 'm':
+                Group_Srv_ShowMember(client_fd ,buf);
+                break;
+            case 'Q' :
+                //踢人 退群 解散群
+                Group_Srv_Quit(client_fd ,buf);
+                break;
+            case 'E' :
+                //获取私聊聊天记录
+                Chat_Srv_SendPrivateRes(client_fd ,buf);
+                break;
         }
     }
+    return NULL;
 }
 #endif
