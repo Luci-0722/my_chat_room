@@ -19,10 +19,12 @@
 #include "../Common/List.h"
 #include "../Persistence/Friends_Persist.h"
 #include "../Common/threadpool/thread_pool.h"
+#include "../Common/requests/request.h"
 #define LISTEN_NUM 12 //连接请求队列长度
 #define MSG_LEN 1024
 online_t *OnlineList;
-
+connection_pool* my_connect_pool = connection_pool::GetInstance();
+threadpool<request> my_thread_pool = threadpool<request>(my_connect_pool);
 void Connect(int port){
     int sock_fd;
     int client_fd;
@@ -60,8 +62,7 @@ void Connect(int port){
             perror("accept");
             exit(0);
         }
-        pthread_t thid;
-        pthread_create(&thid , NULL , thread ,(void *)(long)client_fd);
+        my_thread_pool.append(new request(client_fd));
     }
     
 }

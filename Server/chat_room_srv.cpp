@@ -11,6 +11,7 @@
 #include "Common/cJSON.h"
 #include "Service/Connect.h"
 #include "Persistence/MySQL.h"
+
 int main(){
     char buf[1024];
     char host[50] ,user[30],pass[50],database[50];

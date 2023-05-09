@@ -1,6 +1,7 @@
 #ifndef THREADPOOL_H
 #define THREADPOOL_H
-
+#define LISTEN_NUM 12 //连接请求队列长度
+#define MSG_LEN 1024
 #include <list>
 #include <cstdio>
 #include <exception>
@@ -13,9 +14,9 @@ class threadpool
 {
 public:
     /*thread_number是线程池中线程的数量，max_requests是请求队列中最多允许的、等待处理的请求的数量*/
-    threadpool(int actor_model, connection_pool *connPool, int thread_number = 8, int max_request = 10000);
+    threadpool(connection_pool *connPool, int thread_number = 8, int max_request = 10000);
     ~threadpool();
-    bool append(T *request, int state);
+    bool append(T *request);
     bool append_p(T *request);
 
 private:
@@ -36,7 +37,7 @@ private:
 
 template <typename T>
 //线程池构造函数
-threadpool<T>::threadpool( int actor_model, connection_pool *connPool, int thread_number, int max_requests) : m_actor_model(actor_model),m_thread_number(thread_number), m_max_requests(max_requests), m_threads(NULL),m_connPool(connPool)
+threadpool<T>::threadpool(connection_pool *connPool, int thread_number, int max_requests) : m_thread_number(thread_number), m_max_requests(max_requests), m_threads(NULL),m_connPool(connPool)
 {
     if (thread_number <= 0 || max_requests <= 0)
         throw std::exception();
@@ -71,7 +72,7 @@ threadpool<T>::~threadpool()
 
 template <typename T>
 //reactor模式下的请求入队
-bool threadpool<T>::append(T *request, int state)
+bool threadpool<T>::append(T *request)
 {
     m_queuelocker.lock();
     if (m_workqueue.size() >= m_max_requests)
@@ -80,7 +81,6 @@ bool threadpool<T>::append(T *request, int state)
         return false;
     }
     //读写事件
-    request->m_state = state;
     m_workqueue.push_back(request);
     m_queuelocker.unlock();
     m_queuestat.post();
@@ -119,12 +119,19 @@ void *threadpool<T>::worker(void *arg)
 template <typename T>
 void threadpool<T>::run()
 {
-    char buf[MSG_LEN];
-    int ret ,recv_len;
-    cJSON *root ,*item;
-    char choice[3];
-    int client_fd = (int)(long)arg;
     while(1){
+        m_queuestat.wait();
+        m_queuelocker.lock();
+        if(m_workqueue.empty()) {
+            m_queuelocker.unlock();
+            continue;
+        }
+        char buf[MSG_LEN];
+        int ret ,recv_len;
+        T* request = m_workqueue.front();
+        cJSON *root ,*item;
+        char choice[3];
+        int client_fd = request->client_fd;
         recv_len = 0;
         while(recv_len < MSG_LEN){
             ret = 0;
@@ -135,7 +142,7 @@ void threadpool<T>::run()
                     //向在线好友发送下线通知
                 }
                 perror("recv");
-                return NULL;
+                return;  //挂！
             }
             recv_len += ret;
         }
@@ -203,6 +210,5 @@ void threadpool<T>::run()
                 break;
         }
     }
-    return NULL;
 }
 #endif
