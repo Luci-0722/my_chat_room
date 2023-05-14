@@ -14,7 +14,7 @@ class threadpool
 {
 public:
     /*thread_number是线程池中线程的数量，max_requests是请求队列中最多允许的、等待处理的请求的数量*/
-    threadpool(connection_pool *connPool, int thread_number = 8, int max_request = 10000);
+    threadpool(connection_pool *connPool, int thread_number = 2, int max_request = 10000);
     ~threadpool();
     bool append(T *request);
     bool append_p(T *request);
@@ -119,20 +119,29 @@ void *threadpool<T>::worker(void *arg)
 template <typename T>
 void threadpool<T>::run()
 {
+    int tid = gettid();
     while(1){
+        printf("tid: %d 正在等待请求\n", gettid());
         m_queuestat.wait();
+        printf("%d request coming\n", gettid());
         m_queuelocker.lock();
+        printf("获取到锁！\n");
         if(m_workqueue.empty()) {
             m_queuelocker.unlock();
+            printf("队列空，释放锁\n");
             continue;
         }
         char buf[MSG_LEN];
         int ret ,recv_len;
         T* request = m_workqueue.front();
+        m_workqueue.pop_front();
+        m_queuelocker.unlock();
+        printf("取出任务%d，释放锁\n",request->client_fd);
         cJSON *root ,*item;
         char choice[3];
         int client_fd = request->client_fd;
         recv_len = 0;
+        bool flag = true;
         while(recv_len < MSG_LEN){
             ret = 0;
             if((ret = recv(client_fd , buf + recv_len , MSG_LEN - recv_len , 0)) <= 0){
@@ -141,17 +150,22 @@ void threadpool<T>::run()
                     Account_Srv_SendIsOnline(uid ,0);
                     //向在线好友发送下线通知
                 }
+                printf("recv 返回：%d\n", ret);
                 perror("recv");
-                return;  //挂！
+                flag = false;
+                break;
             }
+            printf("%d get msg length: %d\n",tid, ret);
             recv_len += ret;
         }
+        if(flag == false) continue;
+        printf("%d process request....\n", tid);
         root = cJSON_Parse(buf);
         item = cJSON_GetObjectItem(root,"type");
         strcpy(choice ,item -> valuestring);
         cJSON_Delete(root);
 //        printf("收到: sockfd = %d\n%s\n",client_fd,buf);
-
+        printf("%d get choice %c\n", tid, choice[0]);
         switch(choice[0]){
             case 'L' :
                 //登录
@@ -209,6 +223,7 @@ void threadpool<T>::run()
                 Chat_Srv_SendPrivateRes(client_fd ,buf);
                 break;
         }
+        printf("%d  成功处理一个请求\n", tid);
     }
 }
 #endif

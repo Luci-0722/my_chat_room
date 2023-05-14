@@ -83,7 +83,6 @@ int Account_Srv_ChIsOnline(int uid ,int is_online ,int sock_fd){
     if(uid == -1) return 0;
 per: if(Account_Perst_ChIsOnline(uid ,is_online) == 0) rtn = 0;
     return rtn;
-
 }
 
 int Account_Srv_Out(int sock_fd ,char *JSON){

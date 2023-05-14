@@ -17,9 +17,9 @@
 #include "../Common/cJSON.h"
 #include "../Common/List.h"
 #define MSG_LEN 1024
-
 extern online_t* OnlineList;
 int Friends_Srv_GetList(int sock_fd ,const char *JSON){
+    printf("is getting friends list\n");
     char buf[MSG_LEN];
     int uid;
     cJSON *root = cJSON_Parse(JSON);

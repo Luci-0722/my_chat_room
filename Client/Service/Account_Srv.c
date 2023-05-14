@@ -55,6 +55,7 @@ int Account_Srv_Out(int uid){
         perror("send 请求服务器失败");
         rtn = 0;
     }
+    printf("%d 已发送下线请求\n", uid);
     gl_uid = 0;
     cJSON_Delete(root);
     free(out);
@@ -151,7 +152,7 @@ int Account_Srv_Login(const char *name , const char *password){
     if(res == 1) {
         item = cJSON_GetObjectItem(root,"uid");
         rtn = item -> valueint;
-        printf("登录成功!请稍候..");
+        printf("登录成功!请稍候..\n");
         fflush(stdout);
         sleep(2);
     }else{

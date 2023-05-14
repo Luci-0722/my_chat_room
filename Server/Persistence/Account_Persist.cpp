@@ -21,7 +21,6 @@ int Account_Perst_ChIsOnline(int uid ,int is_online){
         return 0;
     }
     return 1;
-    
 }
 
 
@@ -31,7 +30,9 @@ int Account_Perst_IsUserName(const char * name){
     MYSQL_ROW row;
     int rtn = 0;
     sprintf(SQL,"SELECT uid FROM account WHERE name = '%s'",name);
+    printf("正在查询用户 %s\n", name, SQL);
     if(mysql_real_query(mysql , SQL , strlen(SQL))){
+        printf("用户名不存在\n");
         return 0;
     }
     res = mysql_store_result(mysql);

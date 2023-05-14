@@ -112,6 +112,7 @@ int Group_Srv_Create(int client_fd ,char *buf){
 }
 int Group_Srv_GetList(int client_fd ,char *JSON){
     //char buf[MSG_LEN];
+    printf("%d is getting group list\n", client_fd);
     int uid;
     cJSON *root = cJSON_Parse(JSON);
     cJSON *item = cJSON_GetObjectItem(root ,"uid");
@@ -119,7 +120,9 @@ int Group_Srv_GetList(int client_fd ,char *JSON){
     cJSON_Delete(root);
     group_t *GroupList = NULL;
     List_Init(GroupList ,group_t);
+    printf("正在获取群组列表.........\n");
     Group_Perst_GetMyGroup(GroupList ,uid);
+    printf("tid : %d 群组列表获取成功！\n", gettid());
     group_t *curPos;
     List_ForEach(GroupList ,curPos){ //将用户拥有的群组发给客户端
         root = cJSON_CreateObject();

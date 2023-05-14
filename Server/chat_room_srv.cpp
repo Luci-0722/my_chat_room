@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include<sys/epoll.h>
 #include "Common/cJSON.h"
 #include "Service/Connect.h"
 #include "Persistence/MySQL.h"
@@ -39,5 +40,6 @@ int main(){
         printf("数据库连接失败\n");
         exit(0);
     }
+    printf("数据库连接成功\n");
     Connect(port);
 }

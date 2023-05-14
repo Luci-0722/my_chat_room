@@ -44,6 +44,7 @@ int Friends_Perst_GetList(friends_t * FriendsList ,int uid){
             "SELECT * FROM friends WHERE (uid = '%d' OR fuid = '%d')" ,
             uid ,uid);
     if(mysql_real_query(mysql ,SQL ,strlen(SQL))){
+        printf("sql wrong %s\n", SQL);
         printf("%s",mysql_error(mysql));
         return 0;
     }
