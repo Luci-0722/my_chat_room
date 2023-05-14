@@ -97,6 +97,7 @@ int Group_Perst_GetMyGroup(group_t *MyGroupList ,int uid){
     MYSQL_RES *res ;
     MYSQL_ROW row ;
     sprintf(SQL ,"SELECT gid FROM group_member WHERE uid = '%d'",uid);
+    printf("正在查询数据库...........%s\n", SQL);
     if(mysql_real_query(mysql ,SQL ,strlen(SQL))){
         printf("%s",mysql_error(mysql));
         return 0;

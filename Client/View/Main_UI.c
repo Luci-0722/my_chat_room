@@ -19,7 +19,9 @@ int gl_uid;
 void Main_UI_Hello(){
     int choice;
     do{
+        printf("cur guid %d\n", gl_uid);
         if(gl_uid > 0){
+            printf("进入用户界面.....\n");
             Main_UI_Menu();
         }
         system("clear");
@@ -39,6 +41,7 @@ void Main_UI_Hello(){
         switch(choice){
             case 1:
                 gl_uid = Account_UI_Login();
+                printf("client %d has login\n", gl_uid);
                 break;
             case 2:
                 Account_UI_SignIn();
@@ -53,9 +56,14 @@ void Main_UI_Hello(){
 }
 
 void Main_UI_Menu(){
+    printf("初始化用户界面\n");
+    printf("初始化用户链表\n");
     Chat_Srv_InitList();
+    printf("获取好友列表\n");
     Friends_Srv_GetList();
+    printf("获取组列表\n");
     Group_Srv_GetList();
+    printf("初始化用户界面成功\n");
     char choice;
     do{
         system("clear");

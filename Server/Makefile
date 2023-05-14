@@ -2,10 +2,10 @@
 
 PROGRAM = chat_room_srv
 
-C_SOURCES = $(shell find . -name "*.c")
+C_SOURCES = $(shell find . -name "*.c" -or -name "*.cpp")
 C_OBJECTS = $(patsubst %.c, %.o, $(C_SOURCES))
 
-CC = gcc
+CC = g++
 
 C_FLAGS = -DDEBUG -c -Wall -Wextra -ggdb3 -I.
 
