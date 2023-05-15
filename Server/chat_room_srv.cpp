@@ -18,7 +18,8 @@ void sql_pool(const char *host ,const char *user ,const char *pass ,const char *
 {
     //单例模式获取唯一实例
     m_connPool = connection_pool::GetInstance();
-    m_connPool->init(host, user, pass, database, 0, 5, 0);
+    m_connPool->init(host, user, pass, database, 0, 8, 0);
+    printf("数据库连接池初始化成功\n");
 }
 int main(){
     char buf[1024];

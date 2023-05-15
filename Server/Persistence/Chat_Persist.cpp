@@ -15,6 +15,8 @@ extern MYSQL *mysql;
 extern connection_pool* m_connPool;
 int Chat_Perst_Private(int from_uid ,int to_uid ,const char *msg, int is_offline){
     MYSQL * mysql = m_connPool->GetConnection();
+    printf("获取数据库连接成功\n");
+    printf("剩余连接池数量%d\n", m_connPool->GetFreeConn());
     m_connPool->ReleaseConnection(mysql);
     char SQL[100 + strlen(msg)];
     sprintf(SQL ,
@@ -26,6 +28,7 @@ int Chat_Perst_Private(int from_uid ,int to_uid ,const char *msg, int is_offline
         return 0;
     }
     m_connPool->ReleaseConnection(mysql);
+    printf("释放连接池，剩余数量%d\n", m_connPool->GetConnection());
     return 1;
 }
 int Chat_Perst_Group(int uid ,int gid ,const char *msg, const char *offlist){
