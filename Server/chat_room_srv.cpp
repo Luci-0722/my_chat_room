@@ -12,7 +12,14 @@
 #include "Common/cJSON.h"
 #include "Service/Connect.h"
 #include "Persistence/MySQL.h"
-
+#include "./Common/CGImysql/sql_connection_pool.h"
+connection_pool* m_connPool;
+void sql_pool(const char *host ,const char *user ,const char *pass ,const char *database)
+{
+    //单例模式获取唯一实例
+    m_connPool = connection_pool::GetInstance();
+    m_connPool->init(host, user, pass, database, 0, 5, 0);
+}
 int main(){
     char buf[1024];
     char host[50] ,user[30],pass[50],database[50];
@@ -36,10 +43,7 @@ int main(){
     int port = item -> valueint;
     close(fd);
     cJSON_Delete(root);
-    if(MySQL_Connect(host ,user ,pass ,database) == 0){
-        printf("数据库连接失败\n");
-        exit(0);
-    }
-    printf("数据库连接成功\n");
+    //初始化连接池
+    sql_pool(host, user, pass, database); 
     Connect(port);
 }

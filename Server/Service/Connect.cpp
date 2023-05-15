@@ -24,10 +24,10 @@
 #define LISTEN_NUM 12 //连接请求队列长度
 #define MSG_LEN 1024
 const int MAX_CLIENT = 1024;
+threadpool<request> *my_thread_pool;
 online_t *OnlineList;
 epoll_event events[MAX_CLIENT];
-connection_pool* my_connect_pool = connection_pool::GetInstance();
-threadpool<request> my_thread_pool = threadpool<request>(my_connect_pool);
+extern connection_pool* m_connPool;
 int epoll_fd;
 int setnonblocking(int fd)
 {
@@ -37,6 +37,7 @@ int setnonblocking(int fd)
     fcntl(fd, F_SETFL, new_option);
     return old_option;
 }
+
 
 void addfd(int epollfd, int fd, bool one_shot, int TRIGMode)
 {
@@ -71,6 +72,7 @@ void modfd(int epollfd, int fd, int ev, int TRIGMode)
 }
 
 void Connect(int port){
+    my_thread_pool = new threadpool<request>(m_connPool);
     printf("is connecting\n");
     int client_fd;
     int len;
@@ -115,14 +117,15 @@ void Connect(int port){
                 client_fd = accept(listen_fd , (struct sockaddr *)&client_addr , (socklen_t *)&len);
                 printf("get new client %d\n", client_fd);
                 addfd(epoll_fd, client_fd, false, 1);
-                my_thread_pool.append(new request(client_fd));
+                my_thread_pool->append(new request(client_fd));
             }else if(events[i].events & EPOLLIN) {
                 printf("client %d send mss\n", sockfd);
-                my_thread_pool.append(new request(sockfd));
+                my_thread_pool->append(new request(sockfd));
             }
             printf("have process one epoll_request\n");
         }
         if(client_fd < 0) {
+            delete my_thread_pool;
             perror("accept");
             exit(0);
         }

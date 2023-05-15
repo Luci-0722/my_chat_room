@@ -9,33 +9,41 @@
 #include"Friends_Persist.h"
 #include"../Service/Friends_Srv.h"
 #include"../Common/List.h"
+#include "../Common/CGImysql/sql_connection_pool.h"
 extern MYSQL* mysql;
-
+extern connection_pool* m_connPool;
 
 int Friends_Perst_Add(int uid ,int fuid){
+    MYSQL * mysql = m_connPool->GetConnection();
     char SQL[100];
     sprintf(SQL ,"INSERT INTO friends VALUES('%d' ,'%d' ,'0' ,'0')",uid ,fuid);
     if(mysql_real_query(mysql ,SQL ,strlen(SQL))){
+        m_connPool->ReleaseConnection(mysql);
         printf("%s",mysql_error(mysql));
         return 0;
     }
-   return 1; 
+    m_connPool->ReleaseConnection(mysql);
+    return 1; 
 }
 
 int Friends_Perst_Apply(int uid ,int fuid ,int is_agree){
+    MYSQL * mysql = m_connPool->GetConnection();
     char SQL[100];
     if(is_agree)
         sprintf(SQL ,"UPDATE friends SET state  = '1' WHERE (uid ='%d' AND fuid = '%d')",uid ,fuid);
     else 
         sprintf(SQL ,"DELETE FROM friends WHERE uid = '%d' AND fuid = '%d'",uid ,fuid);
     if(mysql_real_query(mysql ,SQL ,strlen(SQL))){
+        m_connPool->ReleaseConnection(mysql);
         printf("%s",mysql_error(mysql));
         return 0;
     }
+    m_connPool->ReleaseConnection(mysql);
     return 1;
 }
 
 int Friends_Perst_GetList(friends_t * FriendsList ,int uid){
+    MYSQL * mysql = m_connPool->GetConnection();
     MYSQL_RES * res , *_res;
     MYSQL_ROW row ,_row;
     char SQL[100];
@@ -44,6 +52,7 @@ int Friends_Perst_GetList(friends_t * FriendsList ,int uid){
             "SELECT * FROM friends WHERE (uid = '%d' OR fuid = '%d')" ,
             uid ,uid);
     if(mysql_real_query(mysql ,SQL ,strlen(SQL))){
+        m_connPool->ReleaseConnection(mysql);
         printf("sql wrong %s\n", SQL);
         printf("%s",mysql_error(mysql));
         return 0;
@@ -66,9 +75,11 @@ int Friends_Perst_GetList(friends_t * FriendsList ,int uid){
         mysql_free_result(_res);
     }
     mysql_free_result(res);
+    m_connPool->ReleaseConnection(mysql);
     return 1;
 }
 int Friends_Perst_GetFriendInfo(friends_t *Node){
+    MYSQL * mysql = m_connPool->GetConnection();
     char SQL[100];
     MYSQL_RES *res;
     MYSQL_ROW row;
@@ -83,6 +94,7 @@ int Friends_Perst_GetFriendInfo(friends_t *Node){
     Node -> is_follow = 0;
     Node -> state = 0;
     mysql_free_result(res);
+    m_connPool->ReleaseConnection(mysql);
     return 1;
 }
 

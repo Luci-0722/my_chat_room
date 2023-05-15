@@ -12,8 +12,11 @@
 #include"../Service/Group_Srv.h"
 #include"../Common/List.h"
 #include"../Service/Group_Srv.h"
+#include "../Common/CGImysql/sql_connection_pool.h"
 extern MYSQL *mysql;
+extern connection_pool* m_connPool;
 int Group_Perst_IsGroup(const char *name){
+    MYSQL * mysql = m_connPool->GetConnection();
     char SQL[100];
     MYSQL_RES * res;
     MYSQL_ROW row;
@@ -28,18 +31,22 @@ int Group_Perst_IsGroup(const char *name){
     row = mysql_fetch_row(res);
     if(row) rtn = atoi(row[0]);
     mysql_free_result(res);
+    m_connPool->ReleaseConnection(mysql);
     return rtn; 
 }
 int Group_Perst_Create(int uid ,const char *name){
+    MYSQL * mysql = m_connPool->GetConnection();
     int gid;
     char SQL[100];
     sprintf(SQL ,"INSERT INTO `groups` VALUES(NULL ,'%s', '%d' , 1)", name ,uid);
     if(mysql_real_query(mysql ,SQL ,strlen(SQL))){
+        m_connPool->ReleaseConnection(mysql);
         printf("%s\n" ,mysql_error(mysql));
         return 0;
     }
     sprintf(SQL ,"SELECT LAST_INSERT_ID()");
     if(mysql_real_query(mysql ,SQL ,strlen(SQL))){
+        m_connPool->ReleaseConnection(mysql);
         printf("%s\n" ,mysql_error(mysql));
         return 0;
     }
@@ -48,50 +55,61 @@ int Group_Perst_Create(int uid ,const char *name){
     gid = atoi(row[0]);
     sprintf(SQL ,"INSERT INTO group_member VALUES('%d' ,'%d','2' ,'1')",gid ,uid);
     if(mysql_real_query(mysql ,SQL ,strlen(SQL))){
+        m_connPool->ReleaseConnection(mysql);
         printf("%s\n" ,mysql_error(mysql));
         return 0;
     }
-
+    m_connPool->ReleaseConnection(mysql);
     return gid;
 }
 
 int Group_Perst_AddMember(int gid ,int uid ){
+    MYSQL * mysql = m_connPool->GetConnection();
     char SQL[100]; 
     sprintf(SQL ,"INSERT INTO group_member VALUES('%d' ,'%d','0' ,'1')",gid ,uid);
     if(mysql_real_query(mysql ,SQL ,strlen(SQL))){
+        m_connPool->ReleaseConnection(mysql);
         printf("%s\n" ,mysql_error(mysql));
         return 0;
     }
-
+    m_connPool->ReleaseConnection(mysql);
     return 1;
 }
 
 int Group_Perst_DeleteMember(int gid ,int uid){
+    MYSQL * mysql = m_connPool->GetConnection();
     char SQL[100];
     sprintf(SQL ,"DELETE FROM group_member WHERE (gid = '%d' AND uid ='%d')", gid ,uid);
     if(mysql_real_query(mysql ,SQL ,strlen(SQL))){
+        m_connPool->ReleaseConnection(mysql);
         printf("%s",mysql_error(mysql));
         return 0;
     }
+    m_connPool->ReleaseConnection(mysql);
     return 1;
 }
 
 int Group_Perst_Delete(int gid){
+    MYSQL * mysql = m_connPool->GetConnection();
     char SQL[100];
     sprintf(SQL ,"DELETE FROM groups WHERE gid = '%d'",gid);  
     if(mysql_real_query(mysql ,SQL ,strlen(SQL))){
+        m_connPool->ReleaseConnection(mysql);
         printf("%s\n",mysql_error(mysql));
         return 0;
     }
     sprintf(SQL,"DELETE FROM group_member WHERE gid = '%d'" ,gid);
     if(mysql_real_query(mysql ,SQL ,strlen(SQL))){
+        m_connPool->ReleaseConnection(mysql);
         printf("%s\n",mysql_error(mysql));
         return 0;
     }
+    m_connPool->ReleaseConnection(mysql);
     return 1;
 }
 
 int Group_Perst_GetMyGroup(group_t *MyGroupList ,int uid){
+    MYSQL * mysql = m_connPool->GetConnection();
     group_t *NewNode;
     char SQL[100];
     MYSQL_RES *res ;
@@ -99,6 +117,7 @@ int Group_Perst_GetMyGroup(group_t *MyGroupList ,int uid){
     sprintf(SQL ,"SELECT gid FROM group_member WHERE uid = '%d'",uid);
     printf("正在查询数据库...........%s\n", SQL);
     if(mysql_real_query(mysql ,SQL ,strlen(SQL))){
+        m_connPool->ReleaseConnection(mysql);
         printf("%s",mysql_error(mysql));
         return 0;
     }
@@ -108,17 +127,20 @@ int Group_Perst_GetMyGroup(group_t *MyGroupList ,int uid){
         List_AddHead(MyGroupList ,NewNode);
     }
     mysql_free_result(res);
+    m_connPool->ReleaseConnection(mysql);
     return 1;
 }
 
 
 int Group_Perst_GetGroupMember(group_member_t* GroupMember,int gid){
+    MYSQL * mysql = m_connPool->GetConnection();
     MYSQL_RES *res,*_res;
     MYSQL_ROW row ,_row;
     char SQL[100];
     group_member_t *NewNode;
     sprintf(SQL ,"SELECT * FROM group_member WHERE gid = '%d'" ,gid);
     if(mysql_real_query(mysql ,SQL ,strlen(SQL))){
+        m_connPool->ReleaseConnection(mysql);
         printf("%s",mysql_error(mysql));
         return 0;
     }
@@ -126,6 +148,7 @@ int Group_Perst_GetGroupMember(group_member_t* GroupMember,int gid){
     while((row = mysql_fetch_row(res))){
         sprintf(SQL ,"SELECT * FROM account WHERE uid = '%s'" ,row[1]);
         if(mysql_real_query(mysql ,SQL ,strlen(SQL))){
+            m_connPool->ReleaseConnection(mysql);
             printf("%s",mysql_error(mysql));
             return 0;
         }
@@ -147,11 +170,13 @@ int Group_Perst_GetGroupMember(group_member_t* GroupMember,int gid){
         mysql_free_result(_res);
     }   
     mysql_free_result(res);
+    m_connPool->ReleaseConnection(mysql);
     return 1;
 
 }
 
 group_t * Group_Perst_GetInfo(int gid){
+    MYSQL * mysql = m_connPool->GetConnection();
     MYSQL_RES *res;
     MYSQL_ROW row;
     char SQL[100];
@@ -159,6 +184,7 @@ group_t * Group_Perst_GetInfo(int gid){
     NewNode -> gid = gid;
     sprintf(SQL,"SELECT * FROM `groups` WHERE gid = '%d'",NewNode -> gid);
     if(mysql_real_query(mysql ,SQL ,strlen(SQL))){
+        m_connPool->ReleaseConnection(mysql);
         printf("%s",mysql_error(mysql));
         return 0;
     }
@@ -168,6 +194,7 @@ group_t * Group_Perst_GetInfo(int gid){
     NewNode -> owner = atoi(row[2]);
     NewNode -> num = atoi(row[3]);
     mysql_free_result(res);
+    m_connPool->ReleaseConnection(mysql);
     return NewNode;
 }
 
