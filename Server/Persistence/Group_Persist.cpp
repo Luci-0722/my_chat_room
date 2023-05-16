@@ -24,6 +24,7 @@ int Group_Perst_IsGroup(const char *name){
     sprintf(SQL,"SELECT gid FROM `groups` WHERE name = '%s'",name);
     printf("%s", SQL);
     if(mysql_real_query(mysql , SQL , strlen(SQL))){
+        m_connPool->ReleaseConnection(mysql);
         printf("%s\n",mysql_error(mysql));
         return 0;
     }
