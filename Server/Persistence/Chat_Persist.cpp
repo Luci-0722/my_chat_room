@@ -28,7 +28,7 @@ int Chat_Perst_Private(int from_uid ,int to_uid ,const char *msg, int is_offline
         return 0;
     }
     m_connPool->ReleaseConnection(mysql);
-    printf("释放连接池，剩余数量%d\n", m_connPool->GetConnection());
+    printf("释放连接池，剩余数量%d\n", m_connPool->GetFreeConn());
     return 1;
 }
 int Chat_Perst_Group(int uid ,int gid ,const char *msg, const char *offlist){
