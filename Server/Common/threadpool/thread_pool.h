@@ -8,7 +8,11 @@
 #include <pthread.h>
 #include "../lock/locker.h"
 #include "../CGImysql/sql_connection_pool.h"
-
+#include "../../Service/Account_Srv.h"
+#include "../../Service/Account_Srv.h"
+#include "../../Service/Friends_Srv.h"
+#include "../../Service/Chat_Srv.h"
+#include "../../Service/Group_Srv.h"
 template <typename T>
 class threadpool
 {

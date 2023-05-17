@@ -1,3 +1,5 @@
+#ifndef REQUEST
+#define REQUEST
 class request
 {
 private:
@@ -17,3 +19,4 @@ request::request(pthread_t fd)
 request::~request()
 {
 }
+#endif

@@ -14,7 +14,8 @@
 #include "Persistence/MySQL.h"
 #include "./Common/CGImysql/sql_connection_pool.h"
 #include "./chat_room_srv.h"
-#include "request.h"
+#include "./Common/requests/request.h"
+online_t *OnlineList;
 int main(){
     char buf[1024];
     char host[50] ,user[30],pass[50],database[50];

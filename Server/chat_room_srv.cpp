@@ -1,4 +1,49 @@
 #include "chat_room_srv.h"
+#define MAX_CLIENT 1024
+extern online_t *OnlineList;
+
+int setnonblocking(int fd)
+{
+    //fcntl可以获取/设置文件描述符性质
+    int old_option = fcntl(fd, F_GETFL);
+    int new_option = old_option | O_NONBLOCK;
+    fcntl(fd, F_SETFL, new_option);
+    return old_option;
+}
+
+
+void addfd(int epollfd, int fd, bool one_shot, int TRIGMode)
+{
+    epoll_event event;
+    event.data.fd = fd;
+
+    if (1 == TRIGMode)
+        event.events = EPOLLIN | EPOLLET | EPOLLRDHUP;
+    else
+        event.events = EPOLLIN | EPOLLRDHUP;
+
+    //如果对描述符socket注册了EPOLLONESHOT事件，
+    //那么操作系统最多触发其上注册的一个可读、可写或者异常事件，且只触发一次。
+    if (one_shot)
+        event.events |= EPOLLONESHOT;
+    epoll_ctl(epollfd, EPOLL_CTL_ADD, fd, &event);
+    setnonblocking(fd);
+}
+
+
+void modfd(int epollfd, int fd, int ev, int TRIGMode)
+{
+    epoll_event event;
+    event.data.fd = fd;
+
+    if (1 == TRIGMode)
+        event.events = ev | EPOLLET | EPOLLONESHOT | EPOLLRDHUP;
+    else
+        event.events = ev | EPOLLONESHOT | EPOLLRDHUP;
+
+    epoll_ctl(epollfd, EPOLL_CTL_MOD, fd, &event);
+}
+
 template<typename T>
 chat_srv<T>::chat_srv() {
 
@@ -26,18 +71,18 @@ void chat_srv<T>::init(int port , string host, string user, string passWord, str
 
 template<typename T>
 void chat_srv<T>::thread_pool(){
-    m_pool = new thread_pool<T>(m_connPool, m_thread_num)
+    m_pool = new threadpool<T>(m_connPool, m_thread_num);
 }
 
 template<typename T>
 void chat_srv<T>::sql_pool(){
     m_connPool = connection_pool::GetInstance();
-    m_connPool->init(host, m_user, m_passWord, m_databaseName, 3306, m_sql_num, m_close_log);
+    m_connPool->init(m_host, m_user, m_passWord, m_databaseName, m_port, m_sql_num);
 }
 
 template<typename T>
 void chat_srv<T>::eventListen(){
-    List_Init(OnlineList , online_t);
+    List_Init(OnlineList , online_t)
     int len;
     int optval;
     struct sockaddr_in serv_addr , client_addr;
@@ -45,7 +90,7 @@ void chat_srv<T>::eventListen(){
     memset(&serv_addr , 0 ,len);
     memset(&client_addr , 0 , len);
     serv_addr.sin_family = AF_INET;
-    serv_addr.sin_port = htons(port);
+    serv_addr.sin_port = htons(m_port);
     serv_addr.sin_addr.s_addr = htonl(INADDR_ANY);
     int listen_fd = socket(AF_INET , SOCK_STREAM , 0);
     setnonblocking(listen_fd);
@@ -68,33 +113,31 @@ void chat_srv<T>::eventListen(){
     }
     m_epollfd = epoll_create(5);
     assert(m_epollfd != -1);
-    addfd(epoll_fd, listen_fd, false, 0);
+    addfd(m_epollfd, listen_fd, false, 0);
     setnonblocking(listen_fd);
 }
 
 template<typename T>
 void chat_srv<T>::eventLoop(){
     bool stop_server = false;
+    struct sockaddr_in serv_addr , client_addr;
+    int len = sizeof(struct sockaddr_in);
     while(!stop_server){
-        int number = epoll_wait(epoll_fd, events, MAX_CLIENT, -1);
+        int number = epoll_wait(m_epollfd, events, MAX_EVENT_NUMBER, -1);
         if(number < 0) break; //错误
         for(int i = 0; i < number; ++i) {
             printf("\nget %d epoll msg\n", number);
             int sockfd = events[i].data.fd;
-            if (listen_fd == sockfd) {
-                client_fd = accept(listen_fd , (struct sockaddr *)&client_addr , (socklen_t *)&len);
+            if (m_listenfd == sockfd) {
+                int client_fd = accept(m_listenfd , (struct sockaddr *)&client_addr , (socklen_t *)&len);
                 printf("get new client %d\n", client_fd);
-                addfd(epoll_fd, client_fd, false, 1);
+                addfd(m_epollfd, client_fd, false, 1);
                 m_pool->append(new request(client_fd));
             }else if(events[i].events & EPOLLIN) {
                 printf("client %d send mss\n", sockfd);
                 m_pool->append(new request(sockfd));
             }
             printf("have process one epoll_request\n");
-        }
-        if(client_fd < 0) {
-            perror("accept");
-            exit(0);
         }
     }
 }

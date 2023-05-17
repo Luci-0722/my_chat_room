@@ -5,20 +5,16 @@
 #include <fcntl.h>
 #include<sys/epoll.h>
 #include "Common/cJSON.h"
-#include "Service/Connect.h"
 #include "Persistence/MySQL.h"
 #include "./Common/CGImysql/sql_connection_pool.h"
-#include "./Server/Common/threadpool/thread_pool.h"
+#include "./Common/threadpool/thread_pool.h"
 #include <unordered_map>
+#include "./Common/List.h"
+#include "/home/luci/Documents/chatRoom/chat_room/Server/Common/threadpool/thread_pool.h"
+#include "Common/requests/request.h"
 const int MAX_FD = 65536;           //最大文件描述符
 const int MAX_EVENT_NUMBER = 10000; //最大事件数
 const int TIMESLOT = 5;             //最小超时单位
-//用户状态链表
- typedef struct online{
-     int uid;
-     int sock_fd;
-     struct online *next;
- } online_t;
  
  /*
  * socket消息结构
@@ -28,10 +24,7 @@ const int TIMESLOT = 5;             //最小超时单位
  *  C:   Chat
  *  F:   File
  */
-typedef struct {
-    char type;
-    char msg[1023];
-} msg_t;
+
 
 
 template<typename T>

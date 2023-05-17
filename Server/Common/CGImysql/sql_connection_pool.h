@@ -28,7 +28,7 @@ public:
 	//PS-C++11之后局部静态变量线程安全
 	static connection_pool *GetInstance();
 
-	void init(string url, string User, string PassWord, string DataBaseName, int Port, int MaxConn, int close_log); 
+	void init(string url, string User, string PassWord, string DataBaseName, int Port, int MaxConn); 
 
 private:
 	connection_pool();
