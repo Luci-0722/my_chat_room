@@ -1,50 +1,100 @@
-/*************************************************************************
-	>    File Name: char_room_srv.c
-	>       Author: fujie
-	>         Mail: fujie.me@qq.com
-	> Created Time: 2017年08月10日 星期四 15时17分19秒
- ************************************************************************/
+#include "chat_room_srv.h"
+template<typename T>
+chat_srv<T>::chat_srv() {
 
-#include <stdio.h>
-#include <unistd.h>
-#include <fcntl.h>
-#include<sys/epoll.h>
-#include "Common/cJSON.h"
-#include "Service/Connect.h"
-#include "Persistence/MySQL.h"
-#include "./Common/CGImysql/sql_connection_pool.h"
-connection_pool* m_connPool;
-void sql_pool(const char *host ,const char *user ,const char *pass ,const char *database)
-{
-    //单例模式获取唯一实例
-    m_connPool = connection_pool::GetInstance();
-    m_connPool->init(host, user, pass, database, 0, 8, 0);
-    printf("数据库连接池初始化成功\n");
 }
-int main(){
-    char buf[1024];
-    char host[50] ,user[30],pass[50],database[50];
-    int fd = open("config.json" ,O_RDONLY);
-    if(fd == -1) {
-        printf("配置文件打开失败!");
-        getchar();
+
+
+template<typename T>
+chat_srv<T>::~chat_srv() {
+    close(m_epollfd);
+    close(m_listenfd);
+    delete m_pool;
+}
+
+template<typename T>
+void chat_srv<T>::init(int port , string host, string user, string passWord, string databaseName,
+            int sql_num, int thread_num){
+    m_port = port;
+    m_user = user;
+    m_passWord = passWord;
+    m_databaseName = databaseName;
+    m_sql_num = sql_num;
+    m_thread_num = thread_num;     
+    m_host = host;        
+}
+
+template<typename T>
+void chat_srv<T>::thread_pool(){
+    m_pool = new thread_pool<T>(m_connPool, m_thread_num)
+}
+
+template<typename T>
+void chat_srv<T>::sql_pool(){
+    m_connPool = connection_pool::GetInstance();
+    m_connPool->init(host, m_user, m_passWord, m_databaseName, 3306, m_sql_num, m_close_log);
+}
+
+template<typename T>
+void chat_srv<T>::eventListen(){
+    List_Init(OnlineList , online_t);
+    int len;
+    int optval;
+    struct sockaddr_in serv_addr , client_addr;
+    len = sizeof(struct sockaddr_in);
+    memset(&serv_addr , 0 ,len);
+    memset(&client_addr , 0 , len);
+    serv_addr.sin_family = AF_INET;
+    serv_addr.sin_port = htons(port);
+    serv_addr.sin_addr.s_addr = htonl(INADDR_ANY);
+    int listen_fd = socket(AF_INET , SOCK_STREAM , 0);
+    setnonblocking(listen_fd);
+    if(listen_fd < 0) {
+        perror("socket");
         exit(0);
     }
-    read(fd ,buf ,1024);
-    cJSON* root = cJSON_Parse(buf);
-    cJSON* item = cJSON_GetObjectItem(root ,"host");
-    strcpy(host ,item -> valuestring);
-    item = cJSON_GetObjectItem(root ,"user");
-    strcpy(user ,item -> valuestring);
-    item = cJSON_GetObjectItem(root ,"pass");
-    strcpy(pass ,item -> valuestring);
-    item = cJSON_GetObjectItem(root ,"database");
-    strcpy(database ,item -> valuestring);
-    item = cJSON_GetObjectItem(root ,"port");
-    int port = item -> valueint;
-    close(fd);
-    cJSON_Delete(root);
-    //初始化连接池
-    sql_pool(host, user, pass, database); 
-    Connect(port);
+    optval = 1;
+    if(setsockopt(listen_fd , SOL_SOCKET , SO_REUSEADDR , (void *)&optval , sizeof(int)) < 0){
+        perror("socksetopt");
+        exit(0);
+    }
+    if(bind(listen_fd, (struct sockaddr *)&serv_addr , len) < 0){
+        perror("bind");
+        exit(0);
+    }
+    if(listen(listen_fd , LISTEN_NUM) < 0){
+        perror("listen");
+        exit(0);
+    }
+    m_epollfd = epoll_create(5);
+    assert(m_epollfd != -1);
+    addfd(epoll_fd, listen_fd, false, 0);
+    setnonblocking(listen_fd);
+}
+
+template<typename T>
+void chat_srv<T>::eventLoop(){
+    bool stop_server = false;
+    while(!stop_server){
+        int number = epoll_wait(epoll_fd, events, MAX_CLIENT, -1);
+        if(number < 0) break; //错误
+        for(int i = 0; i < number; ++i) {
+            printf("\nget %d epoll msg\n", number);
+            int sockfd = events[i].data.fd;
+            if (listen_fd == sockfd) {
+                client_fd = accept(listen_fd , (struct sockaddr *)&client_addr , (socklen_t *)&len);
+                printf("get new client %d\n", client_fd);
+                addfd(epoll_fd, client_fd, false, 1);
+                m_pool->append(new request(client_fd));
+            }else if(events[i].events & EPOLLIN) {
+                printf("client %d send mss\n", sockfd);
+                m_pool->append(new request(sockfd));
+            }
+            printf("have process one epoll_request\n");
+        }
+        if(client_fd < 0) {
+            perror("accept");
+            exit(0);
+        }
+    }
 }

@@ -1,6 +1,8 @@
 {
     "files.associations": {
         "*.h": "cpp",
-        "list": "cpp"
+        "list": "cpp",
+        "*.tcc": "cpp",
+        "fstream": "cpp"
     }
 }

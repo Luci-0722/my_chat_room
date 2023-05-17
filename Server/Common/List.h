@@ -20,7 +20,11 @@
 #include <stdlib.h>
 #include <assert.h>
 
-
+ typedef struct online{
+     int uid;
+     int sock_fd;
+     struct online *next;
+ } online_t;
 //链表必须为单向链表，链表结点必须包含next指针域
 /*list 为链表头指针*/
 #define List_Init(list, list_node_t) {					\
