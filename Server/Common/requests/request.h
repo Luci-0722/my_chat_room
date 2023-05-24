@@ -1,5 +1,6 @@
 #ifndef REQUEST
 #define REQUEST
+#include <pthread.h>
 class request
 {
 private:
@@ -11,12 +12,4 @@ public:
     ~request();
 };
 
-request::request(pthread_t fd)
-{
-    client_fd = fd;
-}
-
-request::~request()
-{
-}
 #endif

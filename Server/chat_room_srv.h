@@ -4,13 +4,12 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include<sys/epoll.h>
+#include <unordered_map>
 #include "Common/cJSON.h"
 #include "Persistence/MySQL.h"
 #include "./Common/CGImysql/sql_connection_pool.h"
 #include "./Common/threadpool/thread_pool.h"
-#include <unordered_map>
 #include "./Common/List.h"
-#include "/home/luci/Documents/chatRoom/chat_room/Server/Common/threadpool/thread_pool.h"
 #include "Common/requests/request.h"
 const int MAX_FD = 65536;           //最大文件描述符
 const int MAX_EVENT_NUMBER = 10000; //最大事件数
@@ -27,7 +26,17 @@ const int TIMESLOT = 5;             //最小超时单位
 
 
 
-template<typename T>
+int setnonblocking(int fd);
+
+
+
+void addfd(int epollfd, int fd, bool one_shot, int TRIGMode);
+
+
+
+void modfd(int epollfd, int fd, int ev, int TRIGMode);
+
+
 class chat_srv {
 public:
     chat_srv();
@@ -41,19 +50,20 @@ public:
     void eventListen();
     void eventLoop();
 
+    connection_pool *m_connPool;
 private:
     int m_port;//端口
     int m_epollfd;//epoll对象
 
     //数据库相关
-    connection_pool *m_connPool;
+
     string m_user;         //登陆数据库用户名
     string m_passWord;     //登陆数据库密码
     string m_databaseName; //使用数据库名
     int m_sql_num;//数据库连接池数量
     string m_host;
     //线程池相关
-    threadpool<T> *m_pool;
+    threadpool<request> *m_pool;
     int m_thread_num;
 
     //epoll_event相关
@@ -74,5 +84,5 @@ private:
     unordered_map<int, int> clients_sock;
 };
 
-
+int printf(int a, int b);
 #endif

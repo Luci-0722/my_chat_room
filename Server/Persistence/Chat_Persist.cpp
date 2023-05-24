@@ -11,7 +11,6 @@
 #include"./Chat_Persist.h"
 #include<mysql/mysql.h>
 #include "../Common/CGImysql/sql_connection_pool.h"
-extern MYSQL *mysql;
 extern connection_pool* m_connPool;
 int Chat_Perst_Private(int from_uid ,int to_uid ,const char *msg, int is_offline){
     MYSQL * mysql = m_connPool->GetConnection();

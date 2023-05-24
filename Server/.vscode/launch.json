@@ -1,11 +1,12 @@
 {
     "configurations": [
         
+        
         {
             "name": "(gdb)启动2",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${fileDirname}/${fileBasenameNoExtension}",
+            "program": "${fileDirname}/chat_room_srv",
             "args": [],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",

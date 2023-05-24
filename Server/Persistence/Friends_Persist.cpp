@@ -9,10 +9,8 @@
 #include"Friends_Persist.h"
 #include"../Service/Friends_Srv.h"
 #include"../Common/List.h"
-#include "../Common/CGImysql/sql_connection_pool.h"
-extern MYSQL* mysql;
+#include "../chat_room_srv.h"
 extern connection_pool* m_connPool;
-
 int Friends_Perst_Add(int uid ,int fuid){
     MYSQL * mysql = m_connPool->GetConnection();
     char SQL[100];

@@ -38,14 +38,14 @@ void connection_pool::init(string url, string User, string PassWord, string DBNa
 
 		if (con == NULL)
 		{
-			LOG_ERROR("MySQL Error");
+			perror("MySQL Error");
 			exit(1);
 		}
-		con = mysql_real_connect(con, url.c_str(), User.c_str(), PassWord.c_str(), DBName.c_str(), Port, NULL, 0);
+		con = mysql_real_connect(con, url.c_str(), User.c_str(), PassWord.c_str(), DBName.c_str(), 0, NULL, 0);
 
 		if (con == NULL)
 		{
-			LOG_ERROR("MySQL Error");
+			perror("MySQL Error");
 			exit(1);
 		}
 		connList.push_back(con);
@@ -62,7 +62,7 @@ void connection_pool::init(string url, string User, string PassWord, string DBNa
 MYSQL *connection_pool::GetConnection()
 {
 	MYSQL *con = NULL;
-
+	printf("%d\n",connList.size());
 	if (0 == connList.size())
 		return NULL;
 

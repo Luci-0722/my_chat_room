@@ -2,20 +2,15 @@
 
 PROGRAM = chat_room_srv
 
-C_SOURCES = $(shell find . -name "*.c" -or -name "*.cpp")
-C_OBJECTS = $(patsubst %.c, %.o, $(C_SOURCES))
+C_SOURCES = $(shell find . -name "*.cpp")
 
 CC = g++
 
-C_FLAGS = -DDEBUG -c -Wall -Wextra -ggdb3 -I.
-
-all: $(C_OBJECTS) 
+C_FLAGS = -DDEBUG -c -Wall -Wextra -ggdb3 -I. --std=c++11
+chat_room_srv: $(C_SOURCES) 
 	@echo link...
-	$(CC) $(C_OBJECTS) -lm -lpthread -L/usr/lib64/mysql -lmysqlclient -o $(PROGRAM)
+	$(CC) $(C_SOURCES) -g -lm -lpthread -L/usr/lib64/mysql -lmysqlclient -o $(PROGRAM)
 
-.c.o:
-	@echo compile $< ...
-	$(CC) $(C_FLAGS) $< -o $@ 
 
 .PHONY:clean
 clean:
